@@ -4,7 +4,6 @@ import com.stasdev.backend.entitys.Employee;
 import com.stasdev.backend.exceptions.EmployeeIsAlreadyExists;
 import com.stasdev.backend.exceptions.EmployeeNotFound;
 import com.stasdev.backend.repos.EmployeeRepository;
-import com.stasdev.backend.repos.SalaryRepository;
 import com.stasdev.backend.services.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
