@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 public class Salary {
@@ -50,5 +51,29 @@ public class Salary {
     public Salary setAmount(BigDecimal amount) {
         this.amount = amount;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Salary)) return false;
+        Salary salary = (Salary) o;
+        return Objects.equals(getSalaryId(), salary.getSalaryId()) &&
+                Objects.equals(getAmount(), salary.getAmount()) &&
+                Objects.equals(getEmployee(), salary.getEmployee());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getSalaryId(), getAmount(), getEmployee());
+    }
+
+    @Override
+    public String toString() {
+        return "Salary{" +
+                "salaryId=" + salaryId +
+                ", amount=" + amount +
+                ", employee=" + employee +
+                '}';
     }
 }

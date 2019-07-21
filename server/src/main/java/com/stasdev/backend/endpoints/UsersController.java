@@ -11,7 +11,7 @@ import static java.util.Optional.ofNullable;
 
 @RestController
 @RequestMapping("/users")
-public class Users {
+public class UsersController {
 
     @Autowired
     UsersService usersService;

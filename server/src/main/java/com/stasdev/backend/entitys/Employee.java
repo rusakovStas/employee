@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 public class Employee {
@@ -42,5 +43,20 @@ public class Employee {
     public Employee setName(String name) {
         this.name = name;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Employee)) return false;
+        Employee employee = (Employee) o;
+        return Objects.equals(getEmployeeId(), employee.getEmployeeId()) &&
+                Objects.equals(getName(), employee.getName()) &&
+                Objects.equals(getSalary(), employee.getSalary());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEmployeeId(), getName(), getSalary());
     }
 }
