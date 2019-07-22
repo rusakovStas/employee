@@ -26,6 +26,25 @@ public class BackendApplication {
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
+	@Component
+	@Profile("firstStart")
+	class UserCommandLineRunner implements CommandLineRunner {
+
+		@Autowired
+		ApplicationUserRepository repo;
+		@Autowired
+		PasswordEncoder bCryptPasswordEncoder;
+
+		@Override
+		public void run(String... args) throws Exception {
+			System.out.println("*********************FIRST START*********************************");
+			repo.saveAndFlush(
+					new ApplicationUser("admin",
+							bCryptPasswordEncoder.encode("pass"),
+							Collections.singleton(new Role("admin")))
+			);
+		}
+	}
 	/**
 	 * Преднастройки для теста
 	 * Создается админ и юзер для более правильных и не пересекающихся тестов
