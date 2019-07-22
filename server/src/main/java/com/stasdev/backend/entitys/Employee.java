@@ -14,7 +14,7 @@ public class Employee {
     private Long employeeId;
     private String name;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name="salaryId")
     private Salary salary;
 
@@ -43,6 +43,15 @@ public class Employee {
     public Employee setName(String name) {
         this.name = name;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "Employee{" +
+                "employeeId=" + employeeId +
+                ", name='" + name + '\'' +
+                ", salary=" + salary +
+                '}';
     }
 
     @Override

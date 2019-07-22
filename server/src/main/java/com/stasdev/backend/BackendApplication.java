@@ -1,8 +1,11 @@
 package com.stasdev.backend;
 
 import com.stasdev.backend.entitys.ApplicationUser;
+import com.stasdev.backend.entitys.Employee;
 import com.stasdev.backend.entitys.Role;
+import com.stasdev.backend.entitys.Salary;
 import com.stasdev.backend.repos.ApplicationUserRepository;
+import com.stasdev.backend.repos.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -12,6 +15,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 
 
@@ -30,6 +34,8 @@ public class BackendApplication {
 	@Profile("test")
 	class UserCommandLineRunnerTest implements CommandLineRunner {
 
+		@Autowired
+		EmployeeRepository employeeRepository;
 		@Autowired
 		ApplicationUserRepository repo;
 		@Autowired

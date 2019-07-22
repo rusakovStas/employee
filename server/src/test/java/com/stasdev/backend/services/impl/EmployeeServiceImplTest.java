@@ -1,12 +1,14 @@
 package com.stasdev.backend.services.impl;
 
 import com.stasdev.backend.entitys.Employee;
+import com.stasdev.backend.entitys.Push;
 import com.stasdev.backend.exceptions.EmployeeIsAlreadyExists;
 import com.stasdev.backend.exceptions.EmployeeNotFound;
 import com.stasdev.backend.exceptions.EmployeeWithNullId;
 import com.stasdev.backend.repos.EmployeeRepository;
 import com.stasdev.backend.services.help.Validator;
 import org.junit.jupiter.api.Test;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -18,9 +20,12 @@ import static org.mockito.Mockito.*;
 
 class EmployeeServiceImplTest {
 
+    private static final String TOPIC_PUSH = "/topic/push";
     private final EmployeeRepository repository = mock(EmployeeRepository.class);
     private final Validator<Employee> validator = (Validator<Employee>) mock(Validator.class);
-    private EmployeeServiceImpl employeeService = new EmployeeServiceImpl(repository, validator);
+    private final SimpMessagingTemplate simpMessagingTemplate = mock(SimpMessagingTemplate.class);
+    private EmployeeServiceImpl employeeService = new EmployeeServiceImpl(repository, validator, simpMessagingTemplate);
+    private Push timeToUpdate = new Push("Time to update");
 
     @Test
     void testGetAll() {
@@ -41,6 +46,7 @@ class EmployeeServiceImplTest {
         EmployeeIsAlreadyExists employeeIsAlreadyExists = assertThrows(EmployeeIsAlreadyExists.class, () -> employeeService.createEmployee(employee));
 //      Assert
         assertThat(employeeIsAlreadyExists.getMessage(), is("Employee with name '" + employeeName + "' is already exists"));
+        verify(simpMessagingTemplate, times(0)).convertAndSend(TOPIC_PUSH, timeToUpdate);
         verify(repository, times(0)).saveAndFlush(any());
         verify(repository, times(1)).findByName(employeeName);
     }
@@ -58,6 +64,7 @@ class EmployeeServiceImplTest {
         assertThat(employeeNotFound.getMessage(), is("Employee with id '10' not found"));
         verify(repository, times(1)).findById(10L);
         verify(repository, times(0)).saveAndFlush(any());
+        verify(simpMessagingTemplate, times(0)).convertAndSend(TOPIC_PUSH, timeToUpdate);
         verify(validator, times(1)).validate(employeeWhichNotExists);
     }
 
@@ -73,6 +80,7 @@ class EmployeeServiceImplTest {
 //      Assert
         verify(repository, times(0)).findById(anyLong());
         verify(repository, times(0)).saveAndFlush(any());
+        verify(simpMessagingTemplate, times(0)).convertAndSend(TOPIC_PUSH, timeToUpdate);
         verify(validator, times(1)).validate(employeeWithNullId);
     }
 
@@ -90,6 +98,7 @@ class EmployeeServiceImplTest {
         assertThat(employee.getName(), is(newEmployeeName));
         verify(repository, times(1)).findByName(newEmployeeName);
         verify(repository, times(1)).saveAndFlush(newEmployeeWithoutId);
+        verify(simpMessagingTemplate, times(1)).convertAndSend(TOPIC_PUSH, timeToUpdate);
     }
 
     @Test
@@ -108,6 +117,7 @@ class EmployeeServiceImplTest {
         verify(validator,times(1)).validate(updatedEmployee);
         verify(repository, times(1)).findById(1L);
         verify(repository, times(1)).saveAndFlush(updatedEmployee);
+        verify(simpMessagingTemplate, times(1)).convertAndSend(TOPIC_PUSH, timeToUpdate);
     }
 
     @Test
@@ -117,5 +127,7 @@ class EmployeeServiceImplTest {
 //      Assert
         verify(repository, times(1)).deleteAll();
         verify(repository, times(1)).flush();
+        timeToUpdate = new Push("Time to update");
+        verify(simpMessagingTemplate, times(1)).convertAndSend(TOPIC_PUSH, timeToUpdate);
     }
 }

@@ -2,6 +2,7 @@ plugins {
 	id 'org.springframework.boot' version '2.2.0.M3'
 	id 'java'
 	id 'idea'
+	id 'io.qameta.allure' version '2.5'
 }
 
 apply plugin: 'io.spring.dependency-management'
@@ -22,6 +23,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	compile("org.springframework.boot:spring-boot-starter-websocket")
 
 	compile group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.10.6'
 	runtime group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.10.6'
@@ -35,6 +37,19 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.0')
 	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.4.0')
+	testImplementation('com.codeborne:selenide:5.2.3')
+	testImplementation('io.qameta.allure:allure-junit5:2.8.1')
 }
+
+allure {
+	autoconfigure = false
+	version = '2.7.0'
+}
+
+task copyFrontBuildToPublic(type: Copy) {
+	from "${project.projectDir}/../client/build"
+	into "${project.projectDir}/src/main/resources/public"
+}
+
 
 apply from: rootProject.file('gradle/tests.gradle')

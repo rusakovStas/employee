@@ -69,3 +69,4 @@ backend.test.iml
 testCi.com.stasdev.backend.iml
 testCi.com.stasdev.backend.main.iml
 testCi.com.stasdev.backend.test.iml
+/allure-report
