@@ -22,5 +22,7 @@
 Необходимо сначала обновить фронт.
 
 В директории client выполнить команду yarn(либо npm) build-dev
+
 В директории server выполнить команду ./gradlew copyFrontBuildToPublic integrationTest
+
 Разумеется все можно проделать и обычными средствами idea.
