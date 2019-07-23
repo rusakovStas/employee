@@ -10,7 +10,11 @@ export default function employees(state = [], action) {
 		case GET_EMPLOYEES:
 			return action.employees;
 		case ADD_EMPLOYEE:
-			return state.concat(action.employee);
+			return state.findIndex(
+				item => item.employeeid === action.employee.employeeid
+			) === -1
+				? state.concat(action.employee)
+				: state;
 		case UPDATE_EMPLOYEE:
 			return state.map(item =>
 				item.employeeid === action.employee.employeeid
