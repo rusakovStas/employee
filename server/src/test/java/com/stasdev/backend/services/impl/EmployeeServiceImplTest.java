@@ -2,17 +2,18 @@ package com.stasdev.backend.services.impl;
 
 import com.stasdev.backend.entitys.Employee;
 import com.stasdev.backend.entitys.Push;
-import com.stasdev.backend.exceptions.EmployeeIsAlreadyExists;
-import com.stasdev.backend.exceptions.EmployeeNotFound;
-import com.stasdev.backend.exceptions.EmployeeWithNullId;
+import com.stasdev.backend.entitys.Salary;
+import com.stasdev.backend.exceptions.*;
 import com.stasdev.backend.repos.EmployeeRepository;
+import com.stasdev.backend.repos.SalaryRepository;
 import com.stasdev.backend.services.help.Validator;
 import org.junit.jupiter.api.Test;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,7 +25,11 @@ class EmployeeServiceImplTest {
     private final EmployeeRepository repository = mock(EmployeeRepository.class);
     private final Validator<Employee> validator = (Validator<Employee>) mock(Validator.class);
     private final SimpMessagingTemplate simpMessagingTemplate = mock(SimpMessagingTemplate.class);
-    private EmployeeServiceImpl employeeService = new EmployeeServiceImpl(repository, validator, simpMessagingTemplate);
+    private final SalaryRepository salaryRepository = mock(SalaryRepository.class);
+    private EmployeeServiceImpl employeeService = new EmployeeServiceImpl(repository,
+                                                                            validator,
+                                                                            simpMessagingTemplate,
+                                                                            salaryRepository);
     private Push timeToUpdate = new Push("Time to update");
 
     @Test
@@ -85,40 +90,85 @@ class EmployeeServiceImplTest {
     }
 
     @Test
-    void testEmployeeCreate() {
-//       Arrange
-        String newEmployeeName = "Some name";
-        Employee newEmployeeWithoutId = new Employee().setName(newEmployeeName);
+    void testCreateEmployeeWhenSalaryWithSameAmountIsExist() {
+//      Arrange
+        BigDecimal amount = new BigDecimal("1000");
+        Salary existedSalary = new Salary().setSalaryId(1L).setAmount(amount);
+        String newEmployeeName = "New Employee";
+        Employee employeeWithExistedAmount = new Employee().setSalary(new Salary().setAmount(amount)).setName(newEmployeeName);
+        Employee employeeWithExistedSalary = new Employee().setSalary(existedSalary).setName(newEmployeeName);
         when(repository.findByName(newEmployeeName)).thenReturn(Optional.empty());
-        when(repository.saveAndFlush(newEmployeeWithoutId)).thenReturn(newEmployeeWithoutId.setEmployeeId(1L));
+        when(salaryRepository.findByAmount(amount)).thenReturn(Optional.of(existedSalary));
 //      Act
-        Employee employee = employeeService.createEmployee(newEmployeeWithoutId);
+        employeeService.createEmployee(employeeWithExistedAmount);
 //      Assert
-        assertThat(employee.getEmployeeId(), is(1L));
-        assertThat(employee.getName(), is(newEmployeeName));
+        assertThat(employeeWithExistedAmount, equalTo(employeeWithExistedSalary));
         verify(repository, times(1)).findByName(newEmployeeName);
-        verify(repository, times(1)).saveAndFlush(newEmployeeWithoutId);
-        verify(simpMessagingTemplate, times(1)).convertAndSend(TOPIC_PUSH, timeToUpdate);
+        verify(salaryRepository, times(1)).findByAmount(amount);
+        verify(repository, times(1)).saveAndFlush(employeeWithExistedSalary);
     }
 
     @Test
-    void testEmployeeCanBeUpdated() {
-//    Arrange
-        Employee existedEmployee = new Employee()
-                .setEmployeeId(1L)
-                .setName("Some name");
+    void testCreateEmployeeWhenSalaryWithSameAmountIsNotExist() {
+//      Arrange
+        BigDecimal amount = new BigDecimal("1000");
+        Salary newSalary = new Salary().setSalaryId(null).setAmount(amount);
+        String newEmployeeName = "New Employee";
+        Employee employeeWithNonExistedAmount = new Employee().setSalary(newSalary).setName(newEmployeeName);
+        when(repository.findByName(newEmployeeName)).thenReturn(Optional.empty());
+        when(salaryRepository.findByAmount(amount)).thenReturn(Optional.empty());
+//      Act
+        employeeService.createEmployee(employeeWithNonExistedAmount);
+//      Assert
+        assertThat(employeeWithNonExistedAmount.getSalary(), equalTo(newSalary));
+        verify(repository, times(1)).findByName(newEmployeeName);
+        verify(salaryRepository, times(1)).findByAmount(amount);
+        verify(repository, times(1)).saveAndFlush(employeeWithNonExistedAmount);
+    }
+
+    @Test
+    void testUpdateEmployeeAmountWhenSalaryWithSameAmountIsExist() {
+//      Arrange
+        BigDecimal newAmount = new BigDecimal("1000");
+        Salary existedSalaryWithAmount = new Salary().setSalaryId(1L).setAmount(newAmount);
+        Salary salaryWithSameAmount = new Salary().setSalaryId(2L).setAmount(newAmount);
+        String employeeName = "Employee";
         Employee updatedEmployee = new Employee()
                 .setEmployeeId(1L)
-                .setName("Edited name");
-        when(repository.findById(1L)).thenReturn(Optional.of(existedEmployee));
+                .setSalary(salaryWithSameAmount)
+                .setName(employeeName);
+        when(repository.findById(1L)).thenReturn(Optional.of(updatedEmployee));
+        when(salaryRepository.findByAmount(newAmount)).thenReturn(Optional.of(existedSalaryWithAmount));
 //      Act
         employeeService.updateEmployee(updatedEmployee);
 //      Assert
-        verify(validator,times(1)).validate(updatedEmployee);
-        verify(repository, times(1)).findById(1L);
+        assertThat(updatedEmployee.getSalary(), equalTo(existedSalaryWithAmount));
+        verify(validator, times(1)).validate(updatedEmployee);
+        verify(salaryRepository, times(1)).findByAmount(newAmount);
         verify(repository, times(1)).saveAndFlush(updatedEmployee);
-        verify(simpMessagingTemplate, times(1)).convertAndSend(TOPIC_PUSH, timeToUpdate);
     }
+
+    @Test
+    void testUpdateEmployeeAmountWhenSalaryWithSameAmountIsNotExist() {
+//      Arrange
+        BigDecimal newAmount = new BigDecimal("1000");
+        Salary salaryWithNewAmount = new Salary().setSalaryId(2L).setAmount(newAmount);
+        String employeeName = "Employee";
+        Employee updatedEmployee = new Employee()
+                .setEmployeeId(1L)
+                .setSalary(salaryWithNewAmount)
+                .setName(employeeName);
+        when(repository.findById(1L)).thenReturn(Optional.of(updatedEmployee));
+        when(salaryRepository.findByAmount(newAmount)).thenReturn(Optional.empty());
+//      Act
+        employeeService.updateEmployee(updatedEmployee);
+//      Assert
+        assertThat(updatedEmployee.getSalary().getSalaryId(), is(nullValue()));
+        verify(validator, times(1)).validate(updatedEmployee);
+        verify(salaryRepository, times(1)).findByAmount(newAmount);
+        verify(repository, times(1)).saveAndFlush(updatedEmployee);
+    }
+
 
     @Test
     void testDeleteAll() {

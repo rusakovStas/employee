@@ -21,6 +21,7 @@ class EmployeesControllerTest extends CommonApiTest {
         ResponseEntity<String> deleteEmployees = apiFunctions
                 .nonAuth()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .exchange("/employees", HttpMethod.DELETE, null, String.class);
         assertThat(deleteEmployees.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
     }
@@ -30,6 +31,7 @@ class EmployeesControllerTest extends CommonApiTest {
         ResponseEntity<List> forEntity = apiFunctions
                 .nonAuth()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .getForEntity("/employees", List.class);
 
         assertThat(forEntity.getStatusCode(), equalTo(HttpStatus.OK));
@@ -39,38 +41,102 @@ class EmployeesControllerTest extends CommonApiTest {
     void anyoneCanCreateEmployee() {
         Salary salary = new Salary().setAmount(new BigDecimal("10000"));
         Employee newEmployee = new Employee().setName("New Employee").setSalary(salary);
-        ResponseEntity<Employee> employeeResponseEntity = apiFunctions
+        Employee createdEmployee = apiFunctions
                 .nonAuth()
                 .restClientWithoutErrorHandler()
-                .postForEntity("/employees", newEmployee, Employee.class);
-        assertThat(employeeResponseEntity.getStatusCode(), equalTo(HttpStatus.OK));
-        apiFunctions.checkEmployeeExists(newEmployee);
+                .employeeActions()
+                .create(newEmployee);
+
+        apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .checkExists(createdEmployee);
     }
 
     @Test
-    void anyoneCanEditEmployee() {
-        Salary salaryBeforeEdit = new Salary()
-                .setAmount(new BigDecimal("100"));
-        String createdUserName = "Created User";
-        Employee createdUser = new Employee()
-                .setName(createdUserName)
-                .setSalary(salaryBeforeEdit);
-        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(createdUser, apiFunctions));
-        Employee employeeByName = apiFunctions.findEmployeeByName(createdUserName);
-        Salary salaryAfterEdit = employeeByName.getSalary();
-        employeeByName.setSalary(salaryAfterEdit.setAmount(new BigDecimal("5000")));
+    void anyoneCanEditEmployeeWithNewSalary() {
+        BigDecimal amountBeforeUpdate = new BigDecimal("1000");
+        BigDecimal amountAfterUpdate = new BigDecimal("3000");
 
-        HttpEntity<Employee> request = new HttpEntity<>(employeeByName);
-        ResponseEntity<Employee> updatedEmployeeRs = apiFunctions
+        Salary existedSalary = new Salary()
+                .setSalaryId(null)
+                .setAmount(amountBeforeUpdate);
+
+        String firstEmployeeName = "Created User";
+        Employee firstEmployee = new Employee()
+                .setName(firstEmployeeName)
+                .setSalary(existedSalary);
+
+        String secondEmployeeName = "Second Created User";
+        Employee secondEmployee = new Employee()
+                .setName(secondEmployeeName)
+                .setSalary(existedSalary);
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(firstEmployee, apiFunctions));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(secondEmployee, apiFunctions));
+
+        Employee nonEditedEmployee = apiFunctions
                 .nonAuth()
                 .restClientWithoutErrorHandler()
-                .exchange("/employees", HttpMethod.PUT, request, Employee.class);
+                .employeeActions()
+                .findByName(firstEmployeeName);
 
+        secondEmployee = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .findByName(secondEmployeeName);
 
-        assertThat(updatedEmployeeRs.getStatusCode(), equalTo(HttpStatus.OK));
-        Employee body = updatedEmployeeRs.getBody();
-        assert body != null;
-        assertThat(body.getSalary(), equalTo(salaryAfterEdit));
+        Employee updatedEmployee = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .edit(secondEmployee.setSalary(new Salary().setAmount(amountAfterUpdate)));
+
+        assertThat(nonEditedEmployee.getSalary().getAmount(), equalTo(amountBeforeUpdate));
+        assertThat(updatedEmployee.getSalary().getSalaryId(), not(equalTo(firstEmployee.getSalary().getSalaryId())));
+        assertThat(updatedEmployee.getSalary().getAmount(), equalTo(amountAfterUpdate));
+    }
+
+    @Test
+    void anyoneCanEditEmployeeWithSalaryEqualsToSalaryAnotherEmployee() {
+        Salary existedSalary = new Salary()
+                .setSalaryId(null)
+                .setAmount(new BigDecimal("100"));
+        String createdEmployeeName = "Created User";
+        Employee createdEmployee = new Employee()
+                .setName(createdEmployeeName)
+                .setSalary(existedSalary);
+        Salary existedSecondSalary = new Salary()
+                .setSalaryId(null)
+                .setAmount(new BigDecimal("1001"));
+        String createdSecondEmployeeName = "Second Created User";
+        Employee createdSecondEmployee = new Employee()
+                .setName(createdSecondEmployeeName)
+                .setSalary(existedSecondSalary);
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(createdEmployee, apiFunctions));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(createdSecondEmployee, apiFunctions));
+
+        Employee editedEmployee = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .findByName(createdSecondEmployeeName);
+
+        Employee nonEditedEmployee = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .findByName(createdEmployeeName);
+
+        editedEmployee.setSalary(existedSalary);
+        Employee updatedEmployee = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .edit(editedEmployee);
+
+        assertThat(updatedEmployee.getSalary(), equalTo(nonEditedEmployee.getSalary()));
     }
 
     @Test
@@ -78,6 +144,7 @@ class EmployeesControllerTest extends CommonApiTest {
         ResponseEntity<String> deleteEmployees = apiFunctions
                 .authUser()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .exchange("/employees", HttpMethod.DELETE, null, String.class);
         assertThat(deleteEmployees.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
     }
@@ -87,6 +154,7 @@ class EmployeesControllerTest extends CommonApiTest {
         ResponseEntity<String> deleteEmployees = apiFunctions
                 .nonAuth()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .exchange("/employees", HttpMethod.DELETE, null, String.class);
         assertThat(deleteEmployees.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
     }
@@ -96,8 +164,14 @@ class EmployeesControllerTest extends CommonApiTest {
         apiFunctions
                 .authAdmin()
                 .restClientWithoutErrorHandler()
-                .delete("/employees");
-        apiFunctions.checkThatEveryOneEmployeesWasDeleted();
+                .employeeActions()
+                .deleteAll();
+
+        apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .checkThatEveryOneWereDeleted();
     }
 
     @Test
@@ -105,12 +179,12 @@ class EmployeesControllerTest extends CommonApiTest {
         apiFunctions.deleteAllEmployees();
         Employee employeeWhichNotExists = new Employee().setEmployeeId(1L);
 
-        HttpEntity<Employee> request = new HttpEntity<>(employeeWhichNotExists);
         RuntimeException runtimeException = assertThrows(RuntimeException.class,
                 () -> apiFunctions
                         .nonAuth()
                         .restClientWithErrorHandler()
-                        .exchange("/employees", HttpMethod.PUT, request, Employee.class));
+                        .employeeActions()
+                        .edit(employeeWhichNotExists));
         assertThat(runtimeException.getMessage(), containsString("Employee with id '"+employeeWhichNotExists.getEmployeeId()+"' not found"));
     }
 
@@ -118,12 +192,12 @@ class EmployeesControllerTest extends CommonApiTest {
     void anyoneMustSpecifyEmployeeIdToEditEmployee() {
         Employee employeeWithNullId = new Employee().setEmployeeId(null);
 
-        HttpEntity<Employee> request = new HttpEntity<>(employeeWithNullId);
         RuntimeException runtimeException = assertThrows(RuntimeException.class,
                 () -> apiFunctions
                         .nonAuth()
                         .restClientWithErrorHandler()
-                        .exchange("/employees", HttpMethod.PUT, request, Employee.class));
+                        .employeeActions()
+                        .edit(employeeWithNullId));
         assertThat(runtimeException.getMessage(), containsString("You must specify employee's id to change his property"));
     }
 }

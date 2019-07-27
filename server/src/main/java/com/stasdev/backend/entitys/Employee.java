@@ -14,7 +14,7 @@ public class Employee {
     private Long employeeId;
     private String name;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH} )
     @JoinColumn(name="salaryId")
     private Salary salary;
 

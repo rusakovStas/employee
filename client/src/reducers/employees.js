@@ -11,17 +11,16 @@ export default function employees(state = [], action) {
 			return action.employees;
 		case ADD_EMPLOYEE:
 			return state.findIndex(
-				item => item.employeeid === action.employee.employeeid
+				item => item.employeeId === action.employee.employeeId
 			) === -1
 				? state.concat(action.employee)
 				: state;
 		case UPDATE_EMPLOYEE:
 			return state.map(item =>
-				item.employeeid === action.employee.employeeid
+				item.employeeId === action.employee.employeeId
 					? {
 							...item,
-							salary: action.employee.salary,
-							name: action.employee.name
+							salary: action.employee.salary
 					  }
 					: item
 			);

@@ -2,10 +2,11 @@ package com.stasdev.backend.services.impl;
 
 import com.stasdev.backend.entitys.Employee;
 import com.stasdev.backend.entitys.Push;
+import com.stasdev.backend.entitys.Salary;
 import com.stasdev.backend.exceptions.EmployeeIsAlreadyExists;
 import com.stasdev.backend.exceptions.EmployeeNotFound;
-import com.stasdev.backend.exceptions.EmployeeWithNullId;
 import com.stasdev.backend.repos.EmployeeRepository;
+import com.stasdev.backend.repos.SalaryRepository;
 import com.stasdev.backend.services.EmployeeService;
 import com.stasdev.backend.services.help.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +21,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final EmployeeRepository employeeRepository;
+    private final SalaryRepository salaryRepository;
     private final Validator<Employee> validator;
 
     @Autowired
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, Validator<Employee> validator, SimpMessagingTemplate simpMessagingTemplate) {
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, Validator<Employee> validator, SimpMessagingTemplate simpMessagingTemplate, SalaryRepository salaryRepository) {
         this.employeeRepository = employeeRepository;
         this.validator = validator;
         this.simpMessagingTemplate = simpMessagingTemplate;
+        this.salaryRepository = salaryRepository;
     }
 
     @Override
@@ -42,8 +45,8 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .ifPresent(e -> {
                     throw new EmployeeIsAlreadyExists("Employee with name '" + e.getName() + "' is already exists");
                 });
+        salaryRepository.findByAmount(employee.getSalary().getAmount()).ifPresent(employee::setSalary);
         Employee createdEmployee = employeeRepository.saveAndFlush(employee);
-        System.out.println(createdEmployee);
         simpMessagingTemplate.convertAndSend("/topic/push", new Push("Time to update"));
         return createdEmployee;
     }
@@ -55,7 +58,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository
                 .findById(employee.getEmployeeId())
                 .orElseThrow(() -> new EmployeeNotFound("Employee with id '" + employee.getEmployeeId() + "' not found"));
-        Employee updatedEmployee = employeeRepository.saveAndFlush(employee);
+        Salary updatedSalary = salaryRepository.findByAmount(employee.getSalary().getAmount()).orElseGet(() -> employee.getSalary().setSalaryId(null));
+        Employee updatedEmployee = employeeRepository.saveAndFlush(employee.setSalary(updatedSalary));
         simpMessagingTemplate.convertAndSend("/topic/push", new Push("Time to update"));
         return updatedEmployee;
     }

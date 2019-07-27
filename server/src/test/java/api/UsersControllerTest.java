@@ -22,13 +22,25 @@ class UsersControllerTest extends CommonApiTest {
 
     @Test
     void allEndpointsSecured() {
-        ResponseEntity<String> allUsers = apiFunctions.nonAuth().restClientWithoutErrorHandler().getForEntity("/users/all", String.class);
+        ResponseEntity<String> allUsers = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
+                .getForEntity("/users/all", String.class);
         assertThat(allUsers.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
 
-        ResponseEntity<String> createUser = apiFunctions.nonAuth().restClientWithoutErrorHandler().postForEntity("/users",null ,String.class);
+        ResponseEntity<String> createUser = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
+                .postForEntity("/users",null ,String.class);
         assertThat(createUser.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
 
-        ResponseEntity<String> deleteUser = apiFunctions.nonAuth().restClientWithoutErrorHandler().exchange("/users?username=user", HttpMethod.DELETE, null, String.class);
+        ResponseEntity<String> deleteUser = apiFunctions
+                .nonAuth()
+                .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
+                .exchange("/users?username=user", HttpMethod.DELETE, null, String.class);
         assertThat(deleteUser.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
     }
 
@@ -39,7 +51,11 @@ class UsersControllerTest extends CommonApiTest {
         preConditionExecutor.executeAndAddToQueueToUndo(new CreateUser(userName, apiFunctions));
 
         RuntimeException runtimeException = assertThrows(RuntimeException.class,
-                () -> apiFunctions.createUserByAdmin(userName));
+                () -> apiFunctions
+                        .authAdmin()
+                        .restClientWithErrorHandler()
+                        .usersActions()
+                        .createUser(userName));
         assertThat(runtimeException.getMessage(), containsString("User with name '"+userName+"' already exists!"));
     }
 
@@ -47,6 +63,7 @@ class UsersControllerTest extends CommonApiTest {
     void adminCanSeeAllUsers() {
         ResponseEntity<List> forEntity = apiFunctions.authAdmin()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .getForEntity("/users/all", List.class);
 
         assertThat(forEntity.getStatusCode(), equalTo(HttpStatus.OK));
@@ -55,7 +72,11 @@ class UsersControllerTest extends CommonApiTest {
     @Test
     void userCanNotCreateUser() {
         RuntimeException runtimeException = assertThrows(RuntimeException.class,
-                () -> apiFunctions.createUserByUser( "UserForTestRestriction"));
+                () -> apiFunctions
+                        .authUser()
+                        .restClientWithErrorHandler()
+                        .usersActions()
+                        .createUser( "UserForTestRestriction"));
         assertThat(runtimeException.getMessage(), containsString("Forbidden"));
     }
 
@@ -63,6 +84,7 @@ class UsersControllerTest extends CommonApiTest {
     void userCanNotSeeAnotherUser() {
         ResponseEntity<String> all = apiFunctions.authUser()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .getForEntity("/users/all", String.class);
 
         assertThat(all.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
@@ -71,13 +93,29 @@ class UsersControllerTest extends CommonApiTest {
     @Test
     void adminCanDeleteUser() {
         String userName = "UserForDelete";
-        apiFunctions.createUserByAdmin(userName);
-        apiFunctions.checkUserExists(userName);
 
-        apiFunctions.authAdmin().restClientWithErrorHandler()
-                .delete("/users?username="+userName);
+        apiFunctions
+                .authAdmin()
+                .restClientWithoutErrorHandler()
+                .usersActions()
+                .createUser(userName);
+        apiFunctions
+                .authAdmin()
+                .restClientWithoutErrorHandler()
+                .usersActions()
+                .checkUserExists(userName);
 
-        apiFunctions.checkUserNotExists(userName);
+        apiFunctions
+                .authAdmin()
+                .restClientWithErrorHandler()
+                .usersActions()
+                .deleteUser(userName);
+
+        apiFunctions
+                .authAdmin()
+                .restClientWithoutErrorHandler()
+                .usersActions()
+                .checkUserNotExists(userName);
     }
 
     @Test
@@ -85,7 +123,11 @@ class UsersControllerTest extends CommonApiTest {
         String userName = "UserForCheckCreate";
         preConditionExecutor.executeAndAddToQueueToUndo(new CreateUser(userName, apiFunctions));
 
-        var createdUser = apiFunctions.findUserByAdmin(userName);
+        var createdUser = apiFunctions
+                .authAdmin()
+                .restClientWithoutErrorHandler()
+                .usersActions()
+                .findUser(userName);
 
         assertThat(createdUser.getUsername(), equalTo(userName));
         assertThat(createdUser.getPassword(), notNullValue());//пароль не проверяем потому что зашифровано
@@ -99,7 +141,8 @@ class UsersControllerTest extends CommonApiTest {
         RuntimeException runtimeException = assertThrows(RuntimeException.class,
                 () -> apiFunctions.authUser()
                         .restClientWithErrorHandler()
-                        .delete("/users?username=user"));
+                        .usersActions()
+                        .deleteUser("user"));
         assertThat(runtimeException.getMessage(), containsString("Forbidden"));
     }
 

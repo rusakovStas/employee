@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 public class Salary {
@@ -15,24 +17,10 @@ public class Salary {
     private BigDecimal amount;
 
     @JsonIgnore
-    @OneToOne(mappedBy = "salary")
-    private Employee employee;
+    @OneToMany(mappedBy = "salary")
+    private Set<Employee> employees;
 
     public Salary() {
-    }
-
-    public Salary(BigDecimal amount, Employee employee) {
-        this.amount = amount;
-        this.employee = employee;
-    }
-
-    public Employee getEmployee() {
-        return employee;
-    }
-
-    public Salary setEmployee(Employee employee) {
-        this.employee = employee;
-        return this;
     }
 
     public Long getSalaryId() {
@@ -49,8 +37,22 @@ public class Salary {
     }
 
     public Salary setAmount(BigDecimal amount) {
-        this.amount = amount;
+        this.amount = amount.setScale(0, RoundingMode.HALF_UP);
         return this;
+    }
+
+    public Set<Employee> getEmployees() {
+        return employees;
+    }
+
+    public Salary setEmployees(Set<Employee> employees) {
+        this.employees = employees;
+        return this;
+    }
+
+    public Salary(BigDecimal amount, Set<Employee> employees) {
+        this.amount = amount;
+        this.employees = employees;
     }
 
     @Override
@@ -59,13 +61,12 @@ public class Salary {
         if (!(o instanceof Salary)) return false;
         Salary salary = (Salary) o;
         return Objects.equals(getSalaryId(), salary.getSalaryId()) &&
-                Objects.equals(getAmount(), salary.getAmount()) &&
-                Objects.equals(getEmployee(), salary.getEmployee());
+                Objects.equals(getAmount(), salary.getAmount());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getSalaryId(), getAmount(), getEmployee());
+        return Objects.hash(getSalaryId(), getAmount());
     }
 
     @Override
@@ -73,7 +74,6 @@ public class Salary {
         return "Salary{" +
                 "salaryId=" + salaryId +
                 ", amount=" + amount +
-                ", employee=" + employee +
                 '}';
     }
 }

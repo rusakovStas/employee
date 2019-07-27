@@ -32,6 +32,7 @@ public class CreateUser implements PreCondition{
     public void undo() {
         apiFunctions.authAdmin()
                 .restClientWithErrorHandler()
+                .getTestRestTemplate()
                 .delete("/users?username="+userName);
         apiFunctions.checkUserNotExists(userName);
     }

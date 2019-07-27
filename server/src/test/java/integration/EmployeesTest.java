@@ -7,6 +7,8 @@ import com.stasdev.backend.entitys.Employee;
 import com.stasdev.backend.entitys.Salary;
 import common.TestProperties;
 import common.preconditions.CreateEmployee;
+import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -50,20 +52,27 @@ class EmployeesTest extends CommonUITest {
     @Test
     void anyUserCanEditAmountOfEmployee() {
         String forEditName = "For edit";
-
+        String notEditName = "Not for edit";
         Employee forEdit = new Employee()
                 .setName(forEditName)
                 .setSalary(new Salary().setAmount(new BigDecimal("1000")));
-        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(forEdit, this));
+        Employee notEdit = new Employee()
+                .setName(notEditName)
+                .setSalary(new Salary().setAmount(new BigDecimal("1000")));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(forEdit, apiFunctions));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(notEdit, apiFunctions));
         login("user", "pass");
         $(byText("Employees")).click();
         SelenideElement forEditEmployee = $$(byText(forEditName)).shouldHaveSize(1).get(0).closest("div");
+        SelenideElement notEditEmployee = $$(byText(notEditName)).shouldHaveSize(1).get(0).closest("div");
 
+        notEditEmployee.$("#amountOfEmployee").shouldHave(value("1 000"));
         forEditEmployee.$("#amountOfEmployee").shouldHave(value("1 000"));
         forEditEmployee.$(byText("Change amount")).click();
         forEditEmployee.$("#amountOfEmployee").setValue("4444");
         forEditEmployee.$(byText("Accept")).shouldBe(enabled).click();
         forEditEmployee.$("#amountOfEmployee").shouldHave(value("4 444"));
+        notEditEmployee.$("#amountOfEmployee").shouldHave(value("1 000"));
     }
 
     @Test
@@ -73,7 +82,7 @@ class EmployeesTest extends CommonUITest {
         Employee alreadyExists = new Employee()
                 .setName(alreadyExistsName)
                 .setSalary(new Salary().setAmount(new BigDecimal("1000")));
-        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(alreadyExists, this));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(alreadyExists, apiFunctions));
         login("user", "pass");
         $(byText("Employees")).click();
         $("#name").setValue(alreadyExistsName);
@@ -89,7 +98,7 @@ class EmployeesTest extends CommonUITest {
         Employee employeeForDelete = new Employee()
                 .setName(nameForDelete)
                 .setSalary(new Salary().setAmount(new BigDecimal("1000")));
-        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(employeeForDelete, this));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(employeeForDelete, apiFunctions));
         login("admin", "pass");
         $(byText("Employees")).click();
         $$(byText(nameForDelete)).shouldHaveSize(1);
@@ -107,7 +116,7 @@ class EmployeesTest extends CommonUITest {
         Employee alreadyExists = new Employee()
                 .setName(createdByAnotherUserName)
                 .setSalary(new Salary().setAmount(new BigDecimal("1000")));
-        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(alreadyExists, this));
+        preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(alreadyExists, apiFunctions));
         $$(byText(createdByAnotherUserName)).shouldHaveSize(1);
     }
 }

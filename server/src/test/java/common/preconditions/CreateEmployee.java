@@ -27,6 +27,7 @@ public class CreateEmployee implements PreCondition {
         ResponseEntity<Employee> employeeResponseEntity = apiFunctions
                 .nonAuth()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .postForEntity("/employees", employee, Employee.class);
         assertThat(employeeResponseEntity.getStatusCode(), equalTo(HttpStatus.OK));
         apiFunctions.checkEmployeeExists(employee);
@@ -37,6 +38,7 @@ public class CreateEmployee implements PreCondition {
         apiFunctions
                 .authAdmin()
                 .restClientWithoutErrorHandler()
+                .getTestRestTemplate()
                 .delete("/employees");
         apiFunctions.checkThatEveryOneEmployeesWasDeleted();
     }
