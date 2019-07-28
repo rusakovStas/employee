@@ -7,9 +7,7 @@ import com.stasdev.backend.entitys.Employee;
 import com.stasdev.backend.entitys.Salary;
 import common.TestProperties;
 import common.preconditions.CreateEmployee;
-import org.junit.Ignore;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.math.BigDecimal;
 

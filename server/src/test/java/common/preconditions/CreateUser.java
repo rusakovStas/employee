@@ -24,7 +24,11 @@ public class CreateUser implements PreCondition{
 
     @Override
     public void execute() {
-        apiFunctions.createUserByAdmin(userName);
+        apiFunctions
+                .authAdmin()
+                .restClientWithoutErrorHandler()
+                .usersActions()
+                .create(userName);
         apiFunctions.checkUserExists(userName);
     }
 

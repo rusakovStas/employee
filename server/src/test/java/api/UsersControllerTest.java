@@ -55,7 +55,7 @@ class UsersControllerTest extends CommonApiTest {
                         .authAdmin()
                         .restClientWithErrorHandler()
                         .usersActions()
-                        .createUser(userName));
+                        .create(userName));
         assertThat(runtimeException.getMessage(), containsString("User with name '"+userName+"' already exists!"));
     }
 
@@ -76,7 +76,7 @@ class UsersControllerTest extends CommonApiTest {
                         .authUser()
                         .restClientWithErrorHandler()
                         .usersActions()
-                        .createUser( "UserForTestRestriction"));
+                        .create( "UserForTestRestriction"));
         assertThat(runtimeException.getMessage(), containsString("Forbidden"));
     }
 
@@ -98,24 +98,16 @@ class UsersControllerTest extends CommonApiTest {
                 .authAdmin()
                 .restClientWithoutErrorHandler()
                 .usersActions()
-                .createUser(userName);
-        apiFunctions
-                .authAdmin()
-                .restClientWithoutErrorHandler()
-                .usersActions()
-                .checkUserExists(userName);
+                .create(userName);
+        apiFunctions.checkUserExists(userName);
 
         apiFunctions
                 .authAdmin()
                 .restClientWithErrorHandler()
                 .usersActions()
-                .deleteUser(userName);
+                .delete(userName);
 
-        apiFunctions
-                .authAdmin()
-                .restClientWithoutErrorHandler()
-                .usersActions()
-                .checkUserNotExists(userName);
+        apiFunctions.checkUserNotExists(userName);
     }
 
     @Test
@@ -127,7 +119,7 @@ class UsersControllerTest extends CommonApiTest {
                 .authAdmin()
                 .restClientWithoutErrorHandler()
                 .usersActions()
-                .findUser(userName);
+                .find(userName);
 
         assertThat(createdUser.getUsername(), equalTo(userName));
         assertThat(createdUser.getPassword(), notNullValue());//пароль не проверяем потому что зашифровано
@@ -142,7 +134,7 @@ class UsersControllerTest extends CommonApiTest {
                 () -> apiFunctions.authUser()
                         .restClientWithErrorHandler()
                         .usersActions()
-                        .deleteUser("user"));
+                        .delete("user"));
         assertThat(runtimeException.getMessage(), containsString("Forbidden"));
     }
 

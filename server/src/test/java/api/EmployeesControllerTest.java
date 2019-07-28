@@ -47,11 +47,7 @@ class EmployeesControllerTest extends CommonApiTest {
                 .employeeActions()
                 .create(newEmployee);
 
-        apiFunctions
-                .nonAuth()
-                .restClientWithoutErrorHandler()
-                .employeeActions()
-                .checkExists(createdEmployee);
+        apiFunctions.checkEmployeeExists(createdEmployee);
     }
 
     @Test
@@ -167,16 +163,16 @@ class EmployeesControllerTest extends CommonApiTest {
                 .employeeActions()
                 .deleteAll();
 
-        apiFunctions
-                .nonAuth()
-                .restClientWithoutErrorHandler()
-                .employeeActions()
-                .checkThatEveryOneWereDeleted();
+        apiFunctions.checkThatEveryOneEmployeesHaveBeenDeleted();
     }
 
     @Test
     void anyoneCanNotEditEmployeeWhichNotExists() {
-        apiFunctions.deleteAllEmployees();
+        apiFunctions
+                .authAdmin()
+                .restClientWithoutErrorHandler()
+                .employeeActions()
+                .deleteAll();
         Employee employeeWhichNotExists = new Employee().setEmployeeId(1L);
 
         RuntimeException runtimeException = assertThrows(RuntimeException.class,

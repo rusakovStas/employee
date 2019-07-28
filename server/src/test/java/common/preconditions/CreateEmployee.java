@@ -1,13 +1,10 @@
 package common.preconditions;
 
 import com.stasdev.backend.entitys.Employee;
-import com.stasdev.backend.entitys.Salary;
 import common.ApiFunctions;
 import common.PreCondition;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import java.math.BigDecimal;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -40,6 +37,6 @@ public class CreateEmployee implements PreCondition {
                 .restClientWithoutErrorHandler()
                 .getTestRestTemplate()
                 .delete("/employees");
-        apiFunctions.checkThatEveryOneEmployeesWasDeleted();
+        apiFunctions.checkThatEveryOneEmployeesHaveBeenDeleted();
     }
 }

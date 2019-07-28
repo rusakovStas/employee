@@ -38,7 +38,7 @@ public class ApiFunctions {
     @Autowired
     private TestRestTemplate restClient;
 
-    private void clear(){
+    private void clear() {
         restClient.getRestTemplate().getInterceptors().clear();
         //Устанавливаем "пустой" обработчик ошибок
         restClient.getRestTemplate().setErrorHandler(new ResponseErrorHandler() {
@@ -54,7 +54,7 @@ public class ApiFunctions {
         });
     }
 
-    public AccessToRestClient authByUser(String username, String password){
+    AccessToRestClient authByUser(String username, String password) {
 
         clear();
         restClient.getRestTemplate().setInterceptors(
@@ -74,15 +74,15 @@ public class ApiFunctions {
         return new AccessToRestClient(restClient);
     }
 
-    public AccessToRestClient authAdmin(){
+    public AccessToRestClient authAdmin() {
         return authByUser("admin", "pass");
     }
 
-    public AccessToRestClient authUser(){
+    public AccessToRestClient authUser() {
         return authByUser("user", "pass");
     }
 
-    public AccessToRestClient nonAuth(){
+    public AccessToRestClient nonAuth() {
         clear();
         return new AccessToRestClient(restClient);
     }
@@ -92,7 +92,7 @@ public class ApiFunctions {
 
         private TestRestTemplate testRestTemplate;
 
-        private AccessToRestClient(TestRestTemplate  template){
+        private AccessToRestClient(TestRestTemplate template) {
             this.testRestTemplate = template;
         }
 
@@ -100,7 +100,7 @@ public class ApiFunctions {
             return new Actions(testRestTemplate);
         }
 
-        public Actions restClientWithErrorHandler(){
+        public Actions restClientWithErrorHandler() {
             restClient.getRestTemplate().setErrorHandler(new ResponseErrorHandler() {
                 @Override
                 public boolean hasError(ClientHttpResponse response) throws IOException {
@@ -127,19 +127,19 @@ public class ApiFunctions {
     public class Actions {
         private TestRestTemplate testRestTemplate;
 
-        public Actions(TestRestTemplate testRestTemplate) {
+        Actions(TestRestTemplate testRestTemplate) {
             this.testRestTemplate = testRestTemplate;
         }
 
-        public EmployeesActions employeeActions(){
+        public EmployeesActions employeeActions() {
             return new EmployeesActions(testRestTemplate);
         }
 
-        public UsersActions usersActions(){
+        public UsersActions usersActions() {
             return new UsersActions(testRestTemplate);
         }
 
-        public TestRestTemplate getTestRestTemplate(){
+        public TestRestTemplate getTestRestTemplate() {
             return testRestTemplate;
         }
     }
@@ -149,51 +149,36 @@ public class ApiFunctions {
 
         private TestRestTemplate testRestTemplate;
 
-        public EmployeesActions(TestRestTemplate testRestTemplate) {
+        EmployeesActions(TestRestTemplate testRestTemplate) {
             this.testRestTemplate = testRestTemplate;
         }
 
-        public void checkExists(Employee employee){
-            ResponseEntity<List<Employee>> allEmployeesRs = testRestTemplate
-                    .exchange("/employees", HttpMethod.GET,null, new ParameterizedTypeReference<List<Employee>>(){} );
-            List<Employee> allEmployees = allEmployeesRs.getBody();
-            assert allEmployees != null;
-            assertThat(allEmployees.stream().anyMatch(em -> em.getName().equals(employee.getName())), is(true));
-        }
-
-        public Employee create(Employee employee){
+        public Employee create(Employee employee) {
             ResponseEntity<Employee> employeeResponseEntity = testRestTemplate
                     .postForEntity("/employees", employee, Employee.class);
             assertThat(employeeResponseEntity.getStatusCode(), equalTo(HttpStatus.OK));
-            checkExists(employee);
             return employeeResponseEntity.getBody();
         }
 
-        public Employee edit(Employee employee){
+        public Employee edit(Employee employee) {
             ResponseEntity<Employee> editedEmployee = testRestTemplate.exchange("/employees", HttpMethod.PUT, new HttpEntity<>(employee), Employee.class);
             return editedEmployee.getBody();
         }
 
-        public void checkThatEveryOneWereDeleted(){
+        public Employee findByName(String name) {
             ResponseEntity<List<Employee>> allEmployeesRs = testRestTemplate
-                    .exchange("/employees", HttpMethod.GET,null, new ParameterizedTypeReference<List<Employee>>(){} );
-            List<Employee> allEmployees = allEmployeesRs.getBody();
-            assertThat(allEmployees.size(), is(0));
-        }
-
-        public Employee findByName(String name){
-            ResponseEntity<List<Employee>> allEmployeesRs = testRestTemplate
-                    .exchange("/employees", HttpMethod.GET,null, new ParameterizedTypeReference<List<Employee>>(){} );
+                    .exchange("/employees", HttpMethod.GET, null, new ParameterizedTypeReference<List<Employee>>() {
+                    });
             List<Employee> allEmployees = allEmployeesRs.getBody();
             assert allEmployees != null;
             return allEmployees
                     .stream()
                     .filter(em -> em.getName().equals(name))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Employees with name "+ name + " is not exists"));
+                    .orElseThrow(() -> new RuntimeException("Employees with name " + name + " is not exists"));
         }
 
-        public void deleteAll(){
+        public void deleteAll() {
             testRestTemplate.delete("/employees");
         }
 
@@ -203,19 +188,20 @@ public class ApiFunctions {
     public class UsersActions {
         private TestRestTemplate testRestTemplate;
 
-        public UsersActions(TestRestTemplate testRestTemplate) {
+        UsersActions(TestRestTemplate testRestTemplate) {
             this.testRestTemplate = testRestTemplate;
         }
 
-        public ApplicationUser createUser(String name){
+        public ApplicationUser create(String name) {
             ResponseEntity<ApplicationUser> applicationUserResponseEntity = testRestTemplate
                     .postForEntity("/users", new ApplicationUser(name, DEFAULT_PASSWORD), ApplicationUser.class);
             return applicationUserResponseEntity.getBody();
         }
 
-        public ApplicationUser findUser(String name){
+        public ApplicationUser find(String name) {
             var allUserRs = testRestTemplate
-                    .exchange("/users/all", HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
+                    .exchange("/users/all", HttpMethod.GET, null, new ParameterizedTypeReference<List<ApplicationUser>>() {
+                    });
             var allUsers = allUserRs.getBody();
             assert allUsers != null;
             var foundUsers = allUsers.stream()
@@ -225,122 +211,53 @@ public class ApiFunctions {
             return foundUsers.get(0);
         }
 
-        public List<ApplicationUser> getAllUsers(){
+        public List<ApplicationUser> getAll() {
             ResponseEntity<List<ApplicationUser>> allUserRs = testRestTemplate
-                    .exchange("/users/all", HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
+                    .exchange("/users/all", HttpMethod.GET, null, new ParameterizedTypeReference<List<ApplicationUser>>() {
+                    });
             List<ApplicationUser> allUsers = allUserRs.getBody();
             assert allUsers != null;
             return allUsers;
         }
 
-        public void checkUserExists(String userName){
-            ResponseEntity<List<ApplicationUser>> allUserRs = testRestTemplate
-                    .exchange("/users/all", HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
-            List<ApplicationUser> allUsers = allUserRs.getBody();
-            assert allUsers != null;
-            assertThat(allUsers.stream().anyMatch(u -> u.getUsername().equals(userName)), is(true));
-        }
-
-        public void checkUserNotExists(String userName){
-            ResponseEntity<List<ApplicationUser>> allUserRs = testRestTemplate
-                    .exchange("/users/all",HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
-            List<ApplicationUser> allUsers = allUserRs.getBody();
-            assert allUsers != null;
-            assertThat(allUsers.stream().anyMatch(u -> u.getUsername().equals(userName)), is(false));
-        }
-
-        public void deleteUser(String name){
-            testRestTemplate.delete("/users?username="+name);
+        public void delete(String name) {
+            testRestTemplate.delete("/users?username=" + name);
         }
     }
 
-    public void createUserByUser(String createdUser){
-        authUser()
-                .restClientWithErrorHandler()
-                .getTestRestTemplate()
-                .postForEntity("/users", new ApplicationUser(createdUser, DEFAULT_PASSWORD), ApplicationUser.class);
-    }
-
-    public ResponseEntity<ApplicationUser> createUserByAdmin(String userName){
-        return authAdmin()
-                .restClientWithErrorHandler()
-                .getTestRestTemplate()
-                .postForEntity("/users", new ApplicationUser(userName, DEFAULT_PASSWORD), ApplicationUser.class);
-    }
-
-    public void checkUserExists(String userName){
+    public void checkUserExists(String userName) {
         ResponseEntity<List<ApplicationUser>> allUserRs = authAdmin().restClientWithoutErrorHandler().getTestRestTemplate()
-                .exchange("/users/all", HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
+                .exchange("/users/all", HttpMethod.GET, null, new ParameterizedTypeReference<List<ApplicationUser>>() {
+                });
         List<ApplicationUser> allUsers = allUserRs.getBody();
         assert allUsers != null;
         assertThat(allUsers.stream().anyMatch(u -> u.getUsername().equals(userName)), is(true));
     }
 
-    public ApplicationUser findUserByAdmin(String userName){
-        var allUserRs = authAdmin()
-                .restClientWithoutErrorHandler()
-                .getTestRestTemplate()
-                .exchange("/users/all", HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
-        var allUsers = allUserRs.getBody();
-        assert allUsers != null;
-        var foundUsers = allUsers.stream()
-                .filter(u -> u.getUsername().equals(userName))
-                .collect(Collectors.toList());
-        assertThat(foundUsers.size(), is(1));
-        return foundUsers.get(0);
-    }
-
-    public void checkUserNotExists(String userName){
+    public void checkUserNotExists(String userName) {
         ResponseEntity<List<ApplicationUser>> allUserRs = authAdmin().restClientWithoutErrorHandler().getTestRestTemplate()
-                .exchange("/users/all",HttpMethod.GET,null, new ParameterizedTypeReference<List<ApplicationUser>>(){} );
+                .exchange("/users/all", HttpMethod.GET, null, new ParameterizedTypeReference<List<ApplicationUser>>() {
+                });
         List<ApplicationUser> allUsers = allUserRs.getBody();
         assert allUsers != null;
         assertThat(allUsers.stream().anyMatch(u -> u.getUsername().equals(userName)), is(false));
     }
 
-    public void checkEmployeeExists(Employee employee){
+    public void checkEmployeeExists(Employee employee) {
         ResponseEntity<List<Employee>> allEmployeesRs = nonAuth().restClientWithoutErrorHandler().getTestRestTemplate()
-                .exchange("/employees", HttpMethod.GET,null, new ParameterizedTypeReference<List<Employee>>(){} );
+                .exchange("/employees", HttpMethod.GET, null, new ParameterizedTypeReference<List<Employee>>() {
+                });
         List<Employee> allEmployees = allEmployeesRs.getBody();
         assert allEmployees != null;
         assertThat(allEmployees.stream().anyMatch(em -> em.getName().equals(employee.getName())), is(true));
     }
 
-    public void checkThatEveryOneEmployeesWasDeleted(){
+    public void checkThatEveryOneEmployeesHaveBeenDeleted() {
         ResponseEntity<List<Employee>> allEmployeesRs = nonAuth().restClientWithoutErrorHandler().getTestRestTemplate()
-                .exchange("/employees", HttpMethod.GET,null, new ParameterizedTypeReference<List<Employee>>(){} );
+                .exchange("/employees", HttpMethod.GET, null, new ParameterizedTypeReference<List<Employee>>() {
+                });
         List<Employee> allEmployees = allEmployeesRs.getBody();
         assertThat(allEmployees.size(), is(0));
-    }
-
-    public void deleteAllEmployees(){
-        authAdmin()
-                .restClientWithoutErrorHandler()
-                .getTestRestTemplate()
-                .delete("/employees");
-        checkThatEveryOneEmployeesWasDeleted();
-    }
-
-    public Employee findEmployeeByName(String name){
-        ResponseEntity<List<Employee>> allEmployeesRs = nonAuth().restClientWithoutErrorHandler().getTestRestTemplate()
-                .exchange("/employees", HttpMethod.GET,null, new ParameterizedTypeReference<List<Employee>>(){} );
-        List<Employee> allEmployees = allEmployeesRs.getBody();
-        assert allEmployees != null;
-        return allEmployees
-                .stream()
-                .filter(em -> em.getName().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Employees with name "+ name + " is not exists"));
-    }
-
-    public Employee createEmployee(Employee employee){
-        ResponseEntity<Employee> employeeResponseEntity = nonAuth()
-                .restClientWithoutErrorHandler()
-                .getTestRestTemplate()
-                .postForEntity("/employees", employee, Employee.class);
-        assertThat(employeeResponseEntity.getStatusCode(), equalTo(HttpStatus.OK));
-        checkEmployeeExists(employee);
-        return employeeResponseEntity.getBody();
     }
 
 }
