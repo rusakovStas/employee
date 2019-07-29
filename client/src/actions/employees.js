@@ -26,15 +26,20 @@ export const del = () => ({
 	type: DELETE_EMPLOYEES
 });
 
-export const getEmployees = () => dispatch => {
+export const getEmployees = (onConnect, onError) => dispatch => {
 	api.employees.getAllEmployees().then(employees => {
 		dispatch(getEmployeesFromRs(employees));
 	});
-	webSocket.stompClient.onEvent(`/topic/push`, () => {
-		api.employees.getAllEmployees().then(employees => {
-			dispatch(getEmployeesFromRs(employees));
-		});
-	});
+	webSocket.stompClient.onEvent(
+		onConnect,
+		`/topic/push`,
+		() => {
+			api.employees.getAllEmployees().then(employees => {
+				dispatch(getEmployeesFromRs(employees));
+			});
+		},
+		onError
+	);
 };
 
 export const deleteEmployees = () => dispatch =>

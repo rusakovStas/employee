@@ -4,14 +4,19 @@ import BASE_URL from "./constants";
 
 export default {
 	stompClient: {
-		onEvent: (event, callback) => {
+		onEvent: (onConnect, event, callback, onError) => {
 			const socket = new SockJS(`http://${BASE_URL}/employees-app`);
 			const stompClient = Stomp.over(socket);
-			stompClient.connect({}, () => {
-				stompClient.subscribe(event, response => {
-					callback(JSON.parse(response.body));
-				});
-			});
+			stompClient.connect(
+				{},
+				() => {
+					onConnect();
+					stompClient.subscribe(event, response => {
+						callback(JSON.parse(response.body));
+					});
+				},
+				() => onError()
+			);
 		}
 	}
 };

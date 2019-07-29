@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Container, Card, Input, Row, Col, Alert } from "reactstrap";
+import { Container, Card, Input, Row, Col, Alert, Spinner } from "reactstrap";
 import NumberFormat from "react-number-format";
 import FormButton from "../commons/FormButton";
 import InlineError from "../commons/InlineError";
@@ -67,6 +67,13 @@ class EmployeeForm extends React.Component {
 				<Container>
 					{this.state.errors.global && (
 						<Alert color="danger">{this.state.errors.global}</Alert>
+					)}
+					{this.props.connected ? (
+						<div>Connected to server</div>
+					) : (
+						<div>
+							Connecting to server <Spinner />
+						</div>
 					)}
 					<Card
 						body
@@ -147,7 +154,8 @@ EmployeeForm.propTypes = {
 	delete: PropTypes.func.isRequired,
 	create: PropTypes.func.isRequired,
 	edit: PropTypes.func.isRequired,
-	employees: PropTypes.arrayOf(PropTypes.object).isRequired
+	employees: PropTypes.arrayOf(PropTypes.object).isRequired,
+	connected: PropTypes.bool.isRequired
 };
 
 export default EmployeeForm;

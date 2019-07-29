@@ -10,11 +10,21 @@ import {
 import EmployeeForm from "./Form";
 
 class EmployeePage extends React.Component {
-	state = {};
+	state = {
+		connected: false
+	};
 
 	componentDidMount() {
-		this.props.getEmployees();
+		this.props.getEmployees(this.onConnect, this.onError);
 	}
+
+	onConnect = () => {
+		this.setState({ connected: true });
+	};
+
+	onError = () => {
+		this.setState({ connected: false });
+	};
 
 	render() {
 		return (
@@ -25,6 +35,7 @@ class EmployeePage extends React.Component {
 					edit={this.props.editEmployee}
 					employees={this.props.employees}
 					hasRoleAdmin={this.props.hasRoleAdmin}
+					connected={this.state.connected}
 				/>
 			</div>
 		);

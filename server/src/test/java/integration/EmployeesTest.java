@@ -105,7 +105,7 @@ class EmployeesTest extends CommonUITest {
     }
 
     @Test
-    void anyUserCanSeeChangesInEmployeesByAnotherUser() {
+    void anyUserCanSeeChangesInEmployeesByAnotherUser() throws InterruptedException {
         String createdByAnotherUserName = "I'm created by another user";
 
         login("user", "pass");
@@ -114,6 +114,7 @@ class EmployeesTest extends CommonUITest {
         Employee alreadyExists = new Employee()
                 .setName(createdByAnotherUserName)
                 .setSalary(new Salary().setAmount(new BigDecimal("1000")));
+        $(byText("Connected to server")).shouldBe(visible);
         preConditionExecutor.executeAndAddToQueueToUndo(new CreateEmployee(alreadyExists, apiFunctions));
         $$(byText(createdByAnotherUserName)).shouldHaveSize(1);
     }

@@ -54,7 +54,7 @@ public class ApiFunctions {
         });
     }
 
-    AccessToRestClient authByUser(String username, String password) {
+    ConfigRestClient authByUser(String username, String password) {
 
         clear();
         restClient.getRestTemplate().setInterceptors(
@@ -71,28 +71,28 @@ public class ApiFunctions {
                             .add(SecurityConstants.TOKEN_HEADER, "Bearer " + access_token);
                     return execution.execute(request, body);
                 }));
-        return new AccessToRestClient(restClient);
+        return new ConfigRestClient(restClient);
     }
 
-    public AccessToRestClient authAdmin() {
+    public ConfigRestClient authAdmin() {
         return authByUser("admin", "pass");
     }
 
-    public AccessToRestClient authUser() {
+    public ConfigRestClient authUser() {
         return authByUser("user", "pass");
     }
 
-    public AccessToRestClient nonAuth() {
+    public ConfigRestClient nonAuth() {
         clear();
-        return new AccessToRestClient(restClient);
+        return new ConfigRestClient(restClient);
     }
 
 
-    public class AccessToRestClient {
+    public class ConfigRestClient {
 
         private TestRestTemplate testRestTemplate;
 
-        private AccessToRestClient(TestRestTemplate template) {
+        private ConfigRestClient(TestRestTemplate template) {
             this.testRestTemplate = template;
         }
 
